@@ -10,7 +10,6 @@ intents.members = True
 bot = discord.Client(intents=intents)
 tree = app_commands.CommandTree(bot)
 
-# Configurazione ruoli - Modifica questi ID con i ruoli del tuo server Discord
 ROLES = {
     "colori": {
         "🤍 White": 1416426078234480841,
@@ -49,13 +48,11 @@ class RuoliView(ui.View):
         super().__init__(timeout=None)
     
     async def handle_role_selection(self, interaction, category, selected_values, max_selections=1):
-        # Rimuove tutti i ruoli precedenti in questa categoria
         for role_id in ROLES[category].values():
             role = interaction.guild.get_role(role_id)
             if role and role in interaction.user.roles:
                 await interaction.user.remove_roles(role)
         
-        # Aggiunge i nuovi ruoli selezionati
         added_roles = []
         for value in selected_values:
             role_id = ROLES[category].get(value)
@@ -66,68 +63,31 @@ class RuoliView(ui.View):
                     added_roles.append(value)
         
         if added_roles:
-            await interaction.response.send_message(
-                f"{category.capitalize()} impostati: {', '.join(added_roles)}", 
-                ephemeral=True
-            )
+            await interaction.response.send_message(f"{category.capitalize()} impostati: {', '.join(added_roles)}", ephemeral=True)
         else:
-            await interaction.response.send_message(
-                f"Nessun {category[:-1]} selezionato", 
-                ephemeral=True
-            )
+            await interaction.response.send_message(f"Nessun {category[:-1]} selezionato", ephemeral=True)
     
-    # Menu per i colori
-    @ui.select(
-        placeholder="🎨 Scegli il colore del tuo nome",
-        min_values=1,
-        max_values=1,
-        custom_id="colore_select",
-        options=[SelectOption(label=name, emoji=name.split()[0]) for name in ROLES["colori"].keys()]
-    )
+    @ui.select(placeholder="🎨 Scegli il colore del tuo nome", min_values=1, max_values=1, custom_id="colore_select", options=[SelectOption(label=name, emoji=name.split()[0]) for name in ROLES["colori"].keys()])
     async def colore_callback(self, interaction, select):
         await self.handle_role_selection(interaction, "colori", select.values)
     
-    # Menu per i generi
-    @ui.select(
-        placeholder="👤 Qual è il tuo genere?",
-        min_values=1,
-        max_values=1,
-        custom_id="genere_select",
-        options=[SelectOption(label=name, emoji=name.split()[0]) for name in ROLES["generi"].keys()]
-    )
+    @ui.select(placeholder="👤 Qual è il tuo genere?", min_values=1, max_values=1, custom_id="genere_select", options=[SelectOption(label=name, emoji=name.split()[0]) for name in ROLES["generi"].keys()])
     async def genere_callback(self, interaction, select):
         await self.handle_role_selection(interaction, "generi", select.values)
     
-    # Menu per i giochi (multipla selezione)
-    @ui.select(
-        placeholder="🎮 Quali sono i tuoi giochi preferiti?",
-        min_values=0,
-        max_values=len(ROLES["giochi"]),
-        custom_id="giochi_select",
-        options=[SelectOption(label=name, emoji=name.split()[0]) for name in ROLES["giochi"].keys()]
-    )
+    @ui.select(placeholder="🎮 Quali sono i tuoi giochi preferiti?", min_values=0, max_values=len(ROLES["giochi"]), custom_id="giochi_select", options=[SelectOption(label=name, emoji=name.split()[0]) for name in ROLES["giochi"].keys()])
     async def giochi_callback(self, interaction, select):
         await self.handle_role_selection(interaction, "giochi", select.values, max_selections=len(ROLES["giochi"]))
     
-    # Menu per le notifiche
-    @ui.select(
-        placeholder="🔔 Quali notifiche vuoi ricevere?",
-        min_values=0,
-        max_values=len(ROLES["notifiche"]),
-        custom_id="notifiche_select",
-        options=[SelectOption(label=name, emoji=name.split()[0]) for name in ROLES["notifiche"].keys()]
-    )
+    @ui.select(placeholder="🔔 Quali notifiche vuoi ricevere?", min_values=0, max_values=len(ROLES["notifiche"]), custom_id="notifiche_select", options=[SelectOption(label=name, emoji=name.split()[0]) for name in ROLES["notifiche"].keys()])
     async def notifiche_callback(self, interaction, select):
         await self.handle_role_selection(interaction, "notifiche", select.values, max_selections=len(ROLES["notifiche"]))
 
 @bot.event
 async def on_ready():
     print(f'Bot {bot.user} è online!')
-    
-    # Rendi la view persistente
     view = RuoliView()
     bot.add_view(view)
-    
     try:
         synced = await tree.sync()
         print(f"Comandi sincronizzati: {len(synced)}")
@@ -136,25 +96,10 @@ async def on_ready():
 
 @tree.command(name="ruoli", description="Scegli i tuoi ruoli preferiti")
 async def ruoli(interaction: discord.Interaction):
-    embed = discord.Embed(
-        title="SolarGuard APP",
-        description="Scegli i ruoli che preferisci",
-        color=0x00ff00
-    )
-    embed.add_field(
-        name="SU DI TE",
-        value="Scegli il colore del tuo nome, il tuo genere e i tuoi giochi preferiti",
-        inline=False
-    )
-    embed.add_field(
-        name="NOTIFICHE",
-        value="Scegli quali notifiche vuoi ricevere",
-        inline=False
-    )
-    
+    embed = discord.Embed(title="SolarGuard APP", description="Scegli i ruoli che preferisci", color=0x00ff00)
+    embed.add_field(name="SU DI TE", value="Scegli il colore del tuo nome, il tuo genere e i tuoi giochi preferiti", inline=False)
+    embed.add_field(name="NOTIFICHE", value="Scegli quali notifiche vuoi ricevere", inline=False)
     view = RuoliView()
-    
     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-# Avvia il bot
 bot.run(os.getenv('DISCORD_TOKEN'))
